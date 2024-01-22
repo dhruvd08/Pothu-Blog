@@ -19,7 +19,6 @@ app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
 ckeditor = CKEditor(app)
 Bootstrap5(app)
 
-# TODO: Configure Flask-Login
 app.config['SECRET_KEY'] = b'f85f847f0f05627e458ee5d67935a395d61dd3e689b4e44abc6cda08e8714a7b'
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -59,7 +58,7 @@ def admin_only(func):
 # CONFIGURE TABLES
 class BlogPost(db.Model):
     __tablename__ = "blog_posts"
-    #__bind_key__ = 'posts'
+    # __bind_key__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(250), unique=True, nullable=False)
     subtitle = db.Column(db.String(250), nullable=False)
@@ -80,7 +79,6 @@ class Comment(db.Model):
     blog_id: Mapped[int] = mapped_column(ForeignKey("blog_posts.id"))
 
 
-# TODO: Create a User table for all your registered users.
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
     # __bind_key__ = 'users'
@@ -117,7 +115,6 @@ def load_user(user_id):
     return user
 
 
-# TODO: Use Werkzeug to hash the user's password when creating a new user.
 @app.route('/register', methods=['POST', 'GET'])
 def register():
     form = RegisterForm()
@@ -140,7 +137,6 @@ def register():
         return render_template("register.html", form=form)
 
 
-# TODO: Retrieve a user from the database based on their email. 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     form = LoginForm()
@@ -173,7 +169,6 @@ def get_all_posts():
     return render_template("index.html", all_posts=posts)
 
 
-# TODO: Allow logged-in users to comment on posts
 @app.route("/post/<int:post_id>", methods=['POST', 'GET'])
 def show_post(post_id):
     form = CommentForm()
@@ -185,7 +180,6 @@ def show_post(post_id):
     return render_template("post.html", post=requested_post, form=form)
 
 
-# TODO: Use a decorator so only an admin user can create a new post
 @app.route("/new-post", methods=["GET", "POST"])
 @login_required
 @admin_only
@@ -202,7 +196,6 @@ def add_new_post():
         return render_template('make-post.html', form=form, heading='New Post')
 
 
-# TODO: Use a decorator so only an admin user can edit a post
 @app.route("/edit-post/<int:post_id>", methods=["GET", "POST"])
 @admin_only
 @login_required
@@ -229,7 +222,6 @@ def edit_post(post_id):
         return render_template("make-post.html", form=edit_form, is_edit=True)
 
 
-# TODO: Use a decorator so only an admin user can delete a post
 @app.route("/delete/<int:post_id>")
 @admin_only
 def delete_post(post_id):
