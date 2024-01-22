@@ -10818,8 +10818,6 @@ header.masthead .post-heading .meta a {
 .commentList {
   padding:0;
   list-style:none;
-  max-height:200px;
-  overflow:auto;
 }
 .commentList li {
   margin:0;

@@ -1,7 +1,7 @@
 import datetime as dt
 from typing import List
 
-from flask import Flask, abort, render_template, redirect, url_for, flash
+from flask import Flask, abort, render_template, redirect, url_for, flash, request
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
 from flask_gravatar import Gravatar
@@ -10,26 +10,40 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from werkzeug.security import generate_password_hash, check_password_hash
+import smtplib
+import os
 
 # Import your forms from the forms.py
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 
+
+def send_email(to_email, msg, sender_email, sender_password):
+    print(f'Sending notification to {to_email}')
+
+    connection = smtplib.SMTP('smtp.gmail.com', port=587)
+    connection.starttls()
+    connection.login(user=sender_email, password=sender_password)
+    connection.sendmail(from_addr=sender_email,
+                        to_addrs=to_email,
+                        msg=f'{msg}')
+    connection.close()
+    print('Email sent successfully!')
+
+
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL')
+SENDER_PASSWORD = os.environ.get('SENDER_PASSWORD')
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
+app.config['SECRET_KEY'] = os.environ.get('FLASK_KEY')
 ckeditor = CKEditor(app)
 Bootstrap5(app)
 
-app.config['SECRET_KEY'] = b'f85f847f0f05627e458ee5d67935a395d61dd3e689b4e44abc6cda08e8714a7b'
+app.config['SECRET_KEY'] = os.environ.get('FLASK_LOGIN_KEY')
 login_manager = LoginManager()
 login_manager.init_app(app)
 
 # CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///newposts.db'
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-# app.config['SQLALCHEMY_BINDS'] = {
-#     'users': 'sqlite:///users.db',
-#     'posts': 'sqlite:///posts.db'
-# }
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_URI')
 db = SQLAlchemy()
 db.init_app(app)
 
@@ -58,7 +72,6 @@ def admin_only(func):
 # CONFIGURE TABLES
 class BlogPost(db.Model):
     __tablename__ = "blog_posts"
-    # __bind_key__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(250), unique=True, nullable=False)
     subtitle = db.Column(db.String(250), nullable=False)
@@ -81,7 +94,6 @@ class Comment(db.Model):
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
-    # __bind_key__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(250), nullable=False)
     email = db.Column(db.String(250), unique=True, nullable=False)
@@ -205,14 +217,14 @@ def edit_post(post_id):
         title=post.title,
         subtitle=post.subtitle,
         img_url=post.img_url,
-        author=post.author,
+        author=post.user.name,
         body=post.body
     )
     if edit_form.validate_on_submit():
         post.title = edit_form.title.data
         post.subtitle = edit_form.subtitle.data
         post.img_url = edit_form.img_url.data
-        post.author = current_user.name
+        post.user.name = current_user.name
         print(post.title)
         post.body = edit_form.body.data
         db.session.commit()
@@ -236,10 +248,17 @@ def about():
     return render_template("about.html")
 
 
-@app.route("/contact")
+@app.route("/contact", methods=['POST', 'GET'])
 def contact():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        phone = request.form['phone']
+        msg = request.form['message']
+        message = f'Subject:New Inquiry\n\nName: {name}\nEmail: {email}\nPhone No: {phone}\nMessage: {msg}'
+        send_email(to_email=SENDER_EMAIL, msg=message, sender_password=SENDER_PASSWORD, sender_email=SENDER_EMAIL)
     return render_template("contact.html")
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5002)
+    app.run(debug=False, port=5002)
