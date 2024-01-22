@@ -58,13 +58,13 @@ gravatar = Gravatar(app,
 
 
 def admin_only(func):
-
     def wraper(**kwargs):
         if current_user.get_id() == '1':
             resp = func(**kwargs)
             return resp
         else:
             abort(401)
+
     wraper.__name__ = func.__name__
     return wraper
 
@@ -117,8 +117,8 @@ class User(db.Model, UserMixin):
         return str(self.id)
 
 
-# with app.app_context():
-#     db.create_all()
+with app.app_context():
+    db.create_all()
 
 
 @login_manager.user_loader
@@ -261,4 +261,4 @@ def contact():
 
 
 if __name__ == "__main__":
-    app.run(debug=False, port=5002)
+    app.run(debug=False)
